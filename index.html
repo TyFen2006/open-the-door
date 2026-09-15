@@ -1196,9 +1196,9 @@ const RT={
     try{
       const sres=await fetch(apiUrl('session'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({voice:config.round.voice||'verse'})});
       const sd=await sres.json().catch(()=>({}));
-      if(!sres.ok || !sd.client_secret){ this.fail(sd.error||'Could not start a session. Check Settings → AI backend.'); return; }
+      if(!sres.ok || !sd.value){ this.fail(sd.error||'Could not start a session. Check Settings → AI backend.'); return; }
       LS.set('backendOK',true);
-      const EPH=sd.client_secret.value, model=sd.model;
+      const EPH=sd.value;
       const pc=new RTCPeerConnection(); this.pc=pc;
       this.audioEl=new Audio(); this.audioEl.autoplay=true;
       pc.ontrack=e=>{ this.audioEl.srcObject=e.streams[0]; };
@@ -1208,7 +1208,7 @@ const RT={
       dc.onopen=()=>this.configure();
       dc.onmessage=e=>{ try{ this.onEvent(JSON.parse(e.data)); }catch(err){} };
       const offer=await pc.createOffer(); await pc.setLocalDescription(offer);
-      const rr=await fetch('https://api.openai.com/v1/realtime?model='+encodeURIComponent(model),{method:'POST',body:offer.sdp,headers:{'Authorization':'Bearer '+EPH,'Content-Type':'application/sdp'}});
+      const rr=await fetch('https://api.openai.com/v1/realtime/calls',{method:'POST',body:offer.sdp,headers:{'Authorization':'Bearer '+EPH,'Content-Type':'application/sdp'}});
       if(!rr.ok){ this.fail('OpenAI refused the connection (HTTP '+rr.status+'). Your key may be out of credit or the model name is off.'); return; }
       await pc.setRemoteDescription({type:'answer', sdp:await rr.text()});
     }catch(e){
@@ -1219,11 +1219,15 @@ const RT={
   configure(){
     const cfg=this.config;
     this.send({type:'session.update', session:{
-      modalities:['audio','text'],
+      type:'realtime',
       instructions:buildInstructions(cfg.comp, cfg.round),
-      voice:cfg.round.voice||'verse',
-      input_audio_transcription:{model:'whisper-1'},
-      turn_detection:{type:'server_vad', threshold:0.5, prefix_padding_ms:300, silence_duration_ms:700}
+      audio:{
+        input:{
+          transcription:{model:'whisper-1'},
+          turn_detection:{type:'server_vad', threshold:0.5, prefix_padding_ms:300, silence_duration_ms:700}
+        },
+        output:{ voice:cfg.round.voice||'verse' }
+      }
     }});
     this.send({type:'response.create'}); // buyer opens the call
     $('#callStatus').textContent='Live'; $('#callStatus').className='pill brand';
@@ -1235,7 +1239,9 @@ const RT={
       case 'input_audio_buffer.speech_started': this.speaking=true; this.speakStart=Date.now(); setOrb('you'); break;
       case 'input_audio_buffer.speech_stopped': if(this.speaking){ this.userSpeakMs+=Date.now()-this.speakStart; this.speaking=false; } setOrb('idle'); break;
       case 'conversation.item.input_audio_transcription.completed': if(ev.transcript) this.pushLine('user', ev.transcript.trim()); break;
+      case 'response.output_audio_transcript.delta':
       case 'response.audio_transcript.delta': setOrb('buyer'); break;
+      case 'response.output_audio_transcript.done':
       case 'response.audio_transcript.done': if(ev.transcript) this.pushLine('assistant', ev.transcript.trim()); setOrb('idle'); break;
       case 'output_audio_buffer.stopped': setOrb('idle'); break;
       case 'error': console.warn('Realtime error', ev.error||ev); break;

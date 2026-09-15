@@ -25,8 +25,8 @@ Netlify deploy. Budget ~15 minutes. Here's every step.
 ## Cost (read this — it's small but not zero)
 
 - Comp Mode uses OpenAI, which charges per minute of audio. The app defaults to the
-  cheaper **`gpt-4o-mini-realtime`** model. A ~10-minute round is roughly a few cents
-  up to about a dollar or two.
+  cheaper **`gpt-realtime-mini`** model (~$0.02–0.05/min), so a ~10-minute round is
+  roughly **20–50 cents**.
 - **You set a hard spending cap** (Step 1.4 below) so it can *never* surprise you.
 - Everything else in the app is free and needs none of this.
 
@@ -63,8 +63,8 @@ Netlify deploy. Budget ~15 minutes. Here's every step.
    (Env vars only apply to deploys made *after* you add them.)
 
 Optional variables (only if you want to change models later):
-- `REALTIME_MODEL` — the voice model (default `gpt-4o-mini-realtime-preview`). If
-  OpenAI renames it or you want the higher-end `gpt-4o-realtime-preview`, set it here.
+- `REALTIME_MODEL` — the voice model (default `gpt-realtime-mini`). For the higher-end
+  voice, set it to `gpt-realtime`. If OpenAI renames these, set the current id here.
 - `FEEDBACK_MODEL` — the grader (default `gpt-4o-mini`).
 
 ## Step 4 — Turn it on
@@ -130,8 +130,9 @@ also work by just opening `index.html` directly — only Comp Mode needs the bac
 ## Troubleshooting
 - **"Server is missing OPENAI_API_KEY"** → you didn't add the env var, or didn't
   redeploy after adding it (Step 3).
-- **"OpenAI refused the connection"** → key has no credit, hit its cap, or the model
-  name changed — set `REALTIME_MODEL` to a current realtime model.
+- **"OpenAI would not start a session" / "refused the connection"** → key has no
+  credit, hit its cap, or OpenAI renamed the model — set `REALTIME_MODEL` to a current
+  realtime model id (e.g. `gpt-realtime-mini` or `gpt-realtime`) and redeploy.
 - **Test connection fails from a non-Netlify address** → paste your full
   `https://your-site.netlify.app` into Settings → AI backend → Save.
 - **No mic / no voice** → use Safari (iPhone) or Chrome, and allow the mic. iOS needs
