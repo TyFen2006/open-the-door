@@ -1,0 +1,15 @@
+# Secrets — NEVER commit your real key. It lives in Netlify env vars.
+.env
+.env.*
+!.env.example
+
+# Netlify / tooling
+.netlify/
+node_modules/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/

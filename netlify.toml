@@ -1,0 +1,16 @@
+# Netlify config for "Open the Door" — static site + two serverless functions.
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+# Friendly paths: the app calls /api/session and /api/feedback.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Realtime tokens must never be cached.
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "no-store"

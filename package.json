@@ -1,0 +1,11 @@
+{
+  "name": "open-the-door",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sales confidence trainer with Comp Mode — a live OpenAI Realtime AI buyer for competition roleplays.",
+  "type": "module",
+  "scripts": {
+    "dev": "netlify dev"
+  },
+  "license": "UNLICENSED"
+}
