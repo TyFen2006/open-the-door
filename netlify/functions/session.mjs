@@ -25,9 +25,11 @@ export default async (req) => {
   let body = {};
   try { body = await req.json(); } catch { /* empty body is fine */ }
 
-  // Model can be overridden with an env var as OpenAI renames realtime models.
-  const model = process.env.REALTIME_MODEL || 'gpt-realtime-mini';
-  const voice = typeof body.voice === 'string' ? body.voice : 'verse';
+  // Voice quality tier chosen in the app: "natural" (flagship) or "economy" (mini).
+  // REALTIME_MODEL env var, if set, overrides the tier entirely.
+  const tier = typeof body.tier === 'string' ? body.tier : 'natural';
+  const model = process.env.REALTIME_MODEL || (tier === 'economy' ? 'gpt-realtime-mini' : 'gpt-realtime');
+  const voice = typeof body.voice === 'string' ? body.voice : 'marin';
 
   try {
     // GA endpoint: mint an ephemeral client secret bound to this session.

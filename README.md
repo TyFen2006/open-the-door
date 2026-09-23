@@ -24,9 +24,10 @@ Netlify deploy. Budget ~15 minutes. Here's every step.
 
 ## Cost (read this — it's small but not zero)
 
-- Comp Mode uses OpenAI, which charges per minute of audio. The app defaults to the
-  cheaper **`gpt-realtime-mini`** model (~$0.02–0.05/min), so a ~10-minute round is
-  roughly **20–50 cents**.
+- Comp Mode uses OpenAI, which charges per minute of audio. It defaults to the most
+  **Natural** voice (`gpt-realtime`, ~$0.06–0.11/min ≈ **$0.60–1.10 per 10-min round**).
+  In the app, **Settings → Buyer voice quality → Economy** switches to `gpt-realtime-mini`
+  (~$0.02–0.05/min ≈ 20–50¢) — cheaper but flatter/more robotic.
 - **You set a hard spending cap** (Step 1.4 below) so it can *never* surprise you.
 - Everything else in the app is free and needs none of this.
 
@@ -63,8 +64,9 @@ Netlify deploy. Budget ~15 minutes. Here's every step.
    (Env vars only apply to deploys made *after* you add them.)
 
 Optional variables (only if you want to change models later):
-- `REALTIME_MODEL` — the voice model (default `gpt-realtime-mini`). For the higher-end
-  voice, set it to `gpt-realtime`. If OpenAI renames these, set the current id here.
+- `REALTIME_MODEL` — force one voice model regardless of the in-app toggle. Leave unset
+  to let the app choose (`gpt-realtime` for Natural, `gpt-realtime-mini` for Economy).
+  Set it only to pin a specific id if OpenAI renames these.
 - `FEEDBACK_MODEL` — the grader (default `gpt-4o-mini`).
 
 ## Step 4 — Turn it on

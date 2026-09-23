@@ -573,6 +573,15 @@ kbd{background:var(--card2);border:1px solid var(--line);border-radius:6px;paddi
   </div>
 
   <div class="card">
+    <h3>Buyer voice quality</h3>
+    <div class="muted"><b>Natural</b> uses OpenAI's best realtime voice — most human-sounding (~$0.06–0.11/min). <b>Economy</b> is cheaper (~$0.02–0.05/min) but flatter and more robotic. This applies to every round.</div>
+    <select id="voiceTier" class="mt" onchange="saveVoiceTier()">
+      <option value="natural">Natural — most human (recommended)</option>
+      <option value="economy">Economy — cheaper, flatter</option>
+    </select>
+  </div>
+
+  <div class="card">
     <h3>On-device voice (drills)</h3>
     <div class="muted">These are the voices built into this device. Look for ones labeled <b>Natural</b>, <b>Neural</b>, <b>Online</b>, or <b>Enhanced</b> — they sound the most human.</div>
     <select id="voiceSelect" class="mt"></select>
@@ -1084,8 +1093,10 @@ if(hasTTS){ VoiceEngine.refresh(); setTimeout(()=>VoiceEngine.refresh(),300); }
 /* ---- backend / API base ---- */
 function apiBase(){ return (LS.get('apiBase','')||'').replace(/\/+$/,''); }
 function apiUrl(path){ return apiBase()+'/api/'+path; }
-function loadApiBase(){ const el=$('#apiBaseInput'); if(el) el.value=LS.get('apiBase',''); const h=$('#backendHint'); if(h&&LS.get('backendOK',false)) h.innerHTML='<span style="color:var(--good)">✓ Last connected successfully.</span>'; }
+function loadApiBase(){ const el=$('#apiBaseInput'); if(el) el.value=LS.get('apiBase',''); const h=$('#backendHint'); if(h&&LS.get('backendOK',false)) h.innerHTML='<span style="color:var(--good)">✓ Last connected successfully.</span>'; const vt=$('#voiceTier'); if(vt) vt.value=LS.get('voiceTier','natural'); }
 function saveApiBase(){ const v=($('#apiBaseInput').value||'').trim().replace(/\/+$/,''); LS.set('apiBase',v); toast('Backend saved'); }
+function saveVoiceTier(){ LS.set('voiceTier',$('#voiceTier').value); toast('Voice quality saved'); }
+window.saveVoiceTier=saveVoiceTier;
 async function testBackend(){
   const hint=$('#backendHint'); hint.textContent='Testing…';
   try{
@@ -1098,6 +1109,8 @@ async function testBackend(){
 
 /* ---- static config ---- */
 const VOICES=[
+  {id:'marin',label:'Marin — natural, warm (recommended)'},
+  {id:'cedar',label:'Cedar — natural, grounded (recommended)'},
   {id:'verse',label:'Verse — warm, versatile'},
   {id:'ballad',label:'Ballad — calm, measured'},
   {id:'coral',label:'Coral — bright, friendly'},
@@ -1148,7 +1161,14 @@ Raise objections a real ${round.personaTitle||'buyer'} in this situation would a
 THE SELLER'S GAME PLAN (their intended flow — do NOT read this aloud or reference it directly; just behave like a real buyer while they try to work through it. If they flounder, act like a real busy buyer would):
 ${script||'(none provided)'}
 
-STYLE: Talk like a real person on a call — short conversational turns, contractions, the occasional natural filler, real emotion in line with your temperament. Ask your own questions. Never monologue. Let silences be theirs to fill. If they close well and it makes sense, agree to a realistic next step. If time is clearly up or they stall badly, wrap the call up naturally.`;
+DELIVERY — sound like a real human, not an AI assistant. This matters as much as what you say:
+- Vary your prosody: change pace and pitch, speed up when annoyed or excited, slow down when thinking or skeptical.
+- Use real conversational rhythm: natural pauses, and the occasional "hm", "uh", "look,", "I mean", "honestly". Start some replies mid-thought.
+- React in the moment — a short sigh, a small laugh, trailing off, a quick "wait—" — the way a real busy person does.
+- Do NOT over-enunciate, do NOT sound chipper or customer-service-y (unless your temperament is genuinely warm), and never sound like you're reading a script.
+- Keep turns short and let them breathe. Real people don't deliver paragraphs on a call.
+
+STYLE: Talk like a real person on a call — short conversational turns, contractions, real emotion in line with your temperament. Ask your own questions. Never monologue. Let silences be theirs to fill. If they close well and it makes sense, agree to a realistic next step. If time is clearly up or they stall badly, wrap the call up naturally.`;
 }
 
 /* ---- lazy PDF text extraction ---- */
@@ -1194,7 +1214,7 @@ const RT={
     $('#muteBtn').innerHTML='<svg class="ic"><use href="#i-mic"/></svg>Mute'; $('#muteBtn').classList.remove('gold');
     setOrb('idle');
     try{
-      const sres=await fetch(apiUrl('session'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({voice:config.round.voice||'verse'})});
+      const sres=await fetch(apiUrl('session'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({voice:config.round.voice||'marin', tier:LS.get('voiceTier','natural')})});
       const sd=await sres.json().catch(()=>({}));
       if(!sres.ok || !sd.value){ this.fail(sd.error||'Could not start a session. Check Settings → AI backend.'); return; }
       LS.set('backendOK',true);
@@ -1317,9 +1337,9 @@ const Comp={
     const name=prompt('Name this competition (e.g. "Regional Sales Comp — Acme Cybersecurity"):','My competition');
     if(name===null) return;
     const c={ id:this.uid(), name:(name.trim()||'My competition'), createdAt:Date.now(), materials:[], script:DEFAULT_SCRIPT, rounds:[
-      { id:this.uid(), name:'Round 1 — Cold Call', kind:'cold', personaName:'', personaTitle:'Gatekeeper / first contact', personaNotes:'Busy and protective of the exec\'s time. You screen callers before letting anyone through.', voice:'coral', difficulty:3, goal:'Decide whether this person is worth the exec\'s time / whether to book the meeting', timeLimit:5, script:'', history:[] },
-      { id:this.uid(), name:'Round 2 — Meeting with the CISO', kind:'meeting', personaName:'', personaTitle:'CISO (Chief Information Security Officer)', personaNotes:'Risk-focused and skeptical, pitched constantly. Cares about real security outcomes and evidence, not buzzwords.', voice:'sage', difficulty:4, goal:'Protect the org from risk; only advance if you trust them and their claims', timeLimit:12, script:'', history:[] },
-      { id:this.uid(), name:'Round 3 — Meeting with the CIO', kind:'meeting', personaName:'', personaTitle:'CIO (Chief Information Officer)', personaNotes:'Business-value focused; guards budget and the roadmap. Wants clear ROI and a clean rollout.', voice:'ash', difficulty:4, goal:'Tie everything to business value; decide on a concrete next step', timeLimit:12, script:'', history:[] }
+      { id:this.uid(), name:'Round 1 — Cold Call', kind:'cold', personaName:'', personaTitle:'Gatekeeper / first contact', personaNotes:'Busy and protective of the exec\'s time. You screen callers before letting anyone through.', voice:'marin', difficulty:3, goal:'Decide whether this person is worth the exec\'s time / whether to book the meeting', timeLimit:5, script:'', history:[] },
+      { id:this.uid(), name:'Round 2 — Meeting with the CISO', kind:'meeting', personaName:'', personaTitle:'CISO (Chief Information Security Officer)', personaNotes:'Risk-focused and skeptical, pitched constantly. Cares about real security outcomes and evidence, not buzzwords.', voice:'cedar', difficulty:4, goal:'Protect the org from risk; only advance if you trust them and their claims', timeLimit:12, script:'', history:[] },
+      { id:this.uid(), name:'Round 3 — Meeting with the CIO', kind:'meeting', personaName:'', personaTitle:'CIO (Chief Information Officer)', personaNotes:'Business-value focused; guards budget and the roadmap. Wants clear ROI and a clean rollout.', voice:'cedar', difficulty:4, goal:'Tie everything to business value; decide on a concrete next step', timeLimit:12, script:'', history:[] }
     ]};
     const list=this.all(); list.unshift(c); this.save(list); this.open(c.id);
   },
